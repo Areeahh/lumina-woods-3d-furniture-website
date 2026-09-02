@@ -9,77 +9,93 @@ export default function SupportWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const whatsappNumber = "923000000000"; // Replace with your number
+  // Updated phone number in international format
+  const whatsappNumber = "923269659536";
+
+  const getSmartReply = (userQuery) => {
+    const q = userQuery.toLowerCase().trim();
+
+    if (q.includes("hey") || q.includes("hi") || q.includes("hello") || q.includes("aoa") || q.includes("assalam")) {
+      return "Hello! Welcome to Lumina Woods. How can I help you customize your dream furniture piece today?";
+    }
+    if (q.includes("anything else") || q.includes("else") || q.includes("more")) {
+      return "In addition to custom upholstery, we offer solid wood craftsmanship (Walnut, Oak, Ebony), bespoke sizing, and direct WhatsApp support with our lead designers!";
+    }
+    if (q.includes("wood") || q.includes("timber") || q.includes("leg") || q.includes("frame")) {
+      return "We construct our frames using premium Solid American Walnut, Natural White Oak, and Dark Charcoal Ebony wood.";
+    }
+    if (q.includes("cotton") || q.includes("fabric") || q.includes("material") || q.includes("velvet") || q.includes("linen")) {
+      return "We offer organic linen, premium velvet, textured bouclé, and durable cotton-blend fabrics for all seating options.";
+    }
+    if (q.includes("lawn")) {
+      return "Lawn is a light apparel fabric. For our handcrafted furniture, we use heavy-duty upholstery fabrics like linen, velvet, and bouclé.";
+    }
+    if (q.includes("price") || q.includes("cost") || q.includes("discount") || q.includes("rate")) {
+      return "Our handcrafted armchairs start at $480 and custom modular sofas start at $1,450. Check our Catalog page for details!";
+    }
+    if (q.includes("delivery") || q.includes("ship") || q.includes("time")) {
+      return "Custom pieces are crafted within 7-10 business days and delivered with white-glove assembly included.";
+    }
+
+    return `Regarding "${userQuery}": Our studio specializes in custom 3D furniture tailoring. Feel free to reach out via our WhatsApp button above to chat directly with our team!`;
+  };
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
     const userText = input.trim();
-    const newMessages = [...messages, { sender: "user", text: userText }];
-    setMessages(newMessages);
+    setMessages((prev) => [...prev, { sender: "user", text: userText }]);
     setInput("");
     setLoading(true);
 
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-      if (!apiKey) {
-        throw new Error("No API key configured");
-      }
+    if (apiKey) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    {
+                      text: `You are the AI Stylist for Lumina Woods furniture store. Provide a concise, accurate response (under 2 sentences) to this user message: "${userText}"`
+                    }
+                  ]
+                }
+              ]
+            })
+          }
+        );
 
-      // Build conversation history for Gemini
-      const contents = newMessages.map((m) => ({
-        role: m.sender === "user" ? "user" : "model",
-        parts: [{ text: m.text }]
-      }));
+        const data = await response.json();
+        const apiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      // Add system instruction prompt
-      contents.unshift({
-        role: "user",
-        parts: [{
-          text: "System instruction: You are the official AI Interior Stylist for Lumina Woods, a modern 3D furniture store. Answer customer questions accurately, politely, and relevantly. If asked simple greetings like hey or hi, respond with a helpful greeting. If asked about fabrics (lawn, cotton, linen, velvet, bouclé), clarify what is used for furniture upholstery (lawn is clothing fabric, not furniture fabric). Keep answers concise under 3 sentences."
-        }]
-      });
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents })
+        if (apiReply) {
+          setMessages((prev) => [...prev, { sender: "bot", text: apiReply }]);
+          setLoading(false);
+          return;
         }
-      );
-
-      const data = await response.json();
-      const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (botReply) {
-        setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
-      } else {
-        throw new Error("Invalid response format");
+      } catch (e) {
+        // Fallback execution on API error
       }
-    } catch (err) {
-      // Local smart fallback when API key is not active on Vercel
-      let fallbackReply = "I am here to help! Ask me about our furniture materials, 3D customizer, or care instructions.";
-      const lower = userText.toLowerCase();
-
-      if (lower.includes("hey") || lower.includes("hi") || lower.includes("hello")) {
-        fallbackReply = "Hello! How can I help you style your interior space today?";
-      } else if (lower.includes("lawn")) {
-        fallbackReply = "Lawn fabric is typically used for lightweight clothing. For our luxury furniture, we offer durable organic linen, soft bouclé, velvet, and heavy cotton upholstery.";
-      } else if (lower.includes("cotton") || lower.includes("fabric") || lower.includes("material")) {
-        fallbackReply = "We offer organic linen, premium velvet, soft bouclé, and heavy cotton upholstery across our custom 3D collection.";
-      }
-
-      setMessages((prev) => [...prev, { sender: "bot", text: fallbackReply }]);
-    } finally {
-      setLoading(false);
     }
+
+    // Dynamic pattern fallback
+    setTimeout(() => {
+      const botResponse = getSmartReply(userText);
+      setMessages((prev) => [...prev, { sender: "bot", text: botResponse }]);
+      setLoading(false);
+    }, 400);
   };
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2.5">
-      {/* WhatsApp Link */}
+      {/* WhatsApp Link with personal number */}
       <a
         href={`https://wa.me/${whatsappNumber}?text=Hi!%20I%20want%20to%20inquire%20about%20Lumina%20Woods%20furniture.`}
         target="_blank"
@@ -93,7 +109,7 @@ export default function SupportWidget() {
       {/* AI Stylist Window */}
       {isOpen ? (
         <div className="bg-white rounded-2xl shadow-2xl border border-[#E8DFD5] w-[calc(100vw-2rem)] max-w-xs h-80 sm:h-96 flex flex-col overflow-hidden">
-          <div className="bg-[#382A21] text-white p-3.5 flex items-center justify-between font-[#Playfair Display] text-sm">
+          <div className="bg-[#382A21] text-white p-3.5 flex items-center justify-between font-serif text-sm">
             <span>AI Interior Stylist</span>
             <button onClick={() => setIsOpen(false)}><X size={18} /></button>
           </div>
@@ -110,7 +126,7 @@ export default function SupportWidget() {
                 {m.text}
               </div>
             ))}
-            {loading && <div className="text-[#8C705B] text-[10px] italic">Stylist typing...</div>}
+            {loading && <div className="text-[#8C705B] text-[10px] italic">Stylist thinking...</div>}
           </div>
           <div className="p-2 border-t border-[#E8DFD5] flex items-center gap-2">
             <input
