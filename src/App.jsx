@@ -23,7 +23,6 @@ export default function App() {
             </Routes>
           </main>
 
-          {/* Floating AI Stylist + WhatsApp Support Widget */}
           <SupportWidget />
 
           <footer className="border-t border-[#E8DFD5] py-8 text-center text-xs text-[#8C705B] bg-[#FAF8F5]">
