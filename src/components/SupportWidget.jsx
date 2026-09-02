@@ -8,7 +8,7 @@ export default function SupportWidget() {
   ]);
   const [input, setInput] = useState("");
 
-  const whatsappNumber = "923000000000";
+  const whatsappNumber = "923269659536";
 
   const handleSend = () => {
     if (!input.trim()) return;
