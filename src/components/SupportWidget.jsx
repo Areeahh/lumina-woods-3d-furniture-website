@@ -4,29 +4,65 @@ import { MessageCircle, Send, X, PhoneCall } from "lucide-react";
 export default function SupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hello! I am your Lumina AI Stylist. Looking for custom wood or fabric recommendations?" }
+    { sender: "bot", text: "Hello! I am your Lumina AI Stylist. Looking for custom wood, fabric, or furniture recommendations?" }
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const whatsappNumber = "923269659536";
+  const whatsappNumber = "923000000000"; // Replace with your number
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages((prev) => [...prev, { sender: "user", text: input }]);
-    const userMsg = input;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userText = input;
+    setMessages((prev) => [...prev, { sender: "user", text: userText }]);
     setInput("");
+    setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error("Missing API Key");
+      }
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `You are an AI Interior Stylist for Lumina Woods, a modern 3D furniture brand. Answer concisely and accurately based on furniture fabrics (linen, bouclé, velvet, cotton, leather), wood types (walnut, oak), and interior styling. Customer asked: "${userText}"`
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+      const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Yes, we offer organic cotton, natural linen, and soft velvet fabric options for our custom furniture.";
+
+      setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: `Thanks for asking about "${userMsg}". Warm taupe upholstery paired with walnut finishes works beautifully!` }
+        { sender: "bot", text: "Yes! We offer cotton blend, organic linen, soft bouclé, and premium velvet fabrics across our collection." }
       ]);
-    }, 1000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2.5">
-      {/* WhatsApp Button */}
+      {/* WhatsApp Quick Link */}
       <a
         href={`https://wa.me/${whatsappNumber}?text=Hi!%20I%20want%20to%20inquire%20about%20Lumina%20Woods%20furniture.`}
         target="_blank"
@@ -37,7 +73,7 @@ export default function SupportWidget() {
         <PhoneCall size={20} />
       </a>
 
-      {/* AI Stylist Chat Widget */}
+      {/* AI Stylist Window */}
       {isOpen ? (
         <div className="bg-white rounded-2xl shadow-2xl border border-[#E8DFD5] w-[calc(100vw-2rem)] max-w-xs h-80 sm:h-96 flex flex-col overflow-hidden">
           <div className="bg-[#382A21] text-white p-3.5 flex items-center justify-between font-serif text-sm">
@@ -57,6 +93,7 @@ export default function SupportWidget() {
                 {m.text}
               </div>
             ))}
+            {loading && <div className="text-[#8C705B] text-[10px] italic">Stylist thinking...</div>}
           </div>
           <div className="p-2 border-t border-[#E8DFD5] flex items-center gap-2">
             <input
@@ -66,7 +103,7 @@ export default function SupportWidget() {
               placeholder="Ask AI Stylist..."
               className="flex-1 text-xs p-2 outline-none"
             />
-            <button onClick={handleSend} className="p-2 bg-[#382A21] text-white rounded-lg">
+            <button onClick={handleSend} disabled={loading} className="p-2 bg-[#382A21] text-white rounded-lg disabled:opacity-50">
               <Send size={14} />
             </button>
           </div>
