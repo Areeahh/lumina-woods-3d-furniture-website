@@ -7,6 +7,8 @@ const swatches = [
   { name: "Warm Cream", hex: "#E8DFD5" },
   { name: "Terracotta", hex: "#9E5A47" },
   { name: "Charcoal", hex: "#3A3835" },
+  { name: "Sage Green", hex: "#7A8B7B" },
+  { name: "Velvet Navy", hex: "#2B3A4A" },
 ];
 
 export default function Configurator() {
@@ -24,18 +26,21 @@ export default function Configurator() {
           <h3 className="font-serif text-lg font-bold">Nordic Lounge Armchair</h3>
           <p className="text-2xl font-semibold text-[#382A21]">$480</p>
           <div>
-            <label className="text-xs font-semibold text-[#8C705B]">FABRIC COLOR</label>
-            <div className="flex gap-3 mt-2">
+            <label className="text-xs font-semibold text-[#8C705B] tracking-wider uppercase">FABRIC COLOR</label>
+            <div className="flex flex-wrap gap-3 mt-3">
               {swatches.map((s) => (
                 <button
                   key={s.hex}
                   onClick={() => setSelectedColor(s)}
-                  className={`w-8 h-8 rounded-full border-2 transition ${selectedColor.hex === s.hex ? "border-[#382A21] scale-110" : "border-transparent"}`}
+                  title={s.name}
+                  className={`w-9 h-9 rounded-full border-2 transition shadow-sm ${
+                    selectedColor.hex === s.hex ? "border-[#382A21] scale-110 ring-2 ring-[#A68B74]/50" : "border-transparent hover:scale-105"
+                  }`}
                   style={{ backgroundColor: s.hex }}
                 />
               ))}
             </div>
-            <p className="text-xs text-[#8C705B] mt-2">Selected: {selectedColor.name}</p>
+            <p className="text-xs text-[#8C705B] mt-3 font-medium">Selected: <span className="text-[#382A21] font-bold">{selectedColor.name}</span></p>
           </div>
           <button
             onClick={() => addToCart({ id: "armchair-3d", name: "Nordic Lounge Armchair", price: 480, color: selectedColor.name })}
